@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PKG_NAME="dwmac-phytium"
-PKG_VER="1.0.0"
+PKG_VER="1.0.1"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC_DIR="${SCRIPT_DIR}/src"
 DEBS_DIR="${SCRIPT_DIR}/debs"
@@ -63,10 +63,12 @@ install_offline_debs() {
     done
 
     if [ "${#to_install[@]}" -gt 0 ]; then
-        dpkg -i --skip-same-version "${to_install[@]}" || {
+        if ! dpkg -i --skip-same-version "${to_install[@]}"; then
             echo "[WARN] dpkg 安装出现部分依赖问题，尝试使用 dpkg --configure -a 修复..."
-            dpkg --configure -a
-        }
+            if ! dpkg --configure -a; then
+                echo "[WARN] 部分离线依赖未能完成配置，将尝试回退到预编译模块（若有）..." >&2
+            fi
+        fi
     fi
 }
 

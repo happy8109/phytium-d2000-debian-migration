@@ -27,7 +27,7 @@ phytium-d2000-nic-offline/
 ```
 
 仓库内对应文件：
-- 离线分发压缩包：[phytium-d2000-nic-offline-v1.0.0-arm64.tar.gz](file:///e:/phytium-d2000-debian-migration/dist/phytium-d2000-nic-offline-v1.0.0-arm64.tar.gz)
+- 离线分发压缩包：[phytium-d2000-nic-offline-v1.0.1-arm64.tar.gz](file:///e:/phytium-d2000-debian-migration/dist/phytium-d2000-nic-offline-v1.0.1-arm64.tar.gz)
 - 驱动源码：[dwmac-phytium.c](file:///e:/phytium-d2000-debian-migration/src/dwmac-phytium.c)、[Makefile](file:///e:/phytium-d2000-debian-migration/src/Makefile)、[dkms.conf](file:///e:/phytium-d2000-debian-migration/src/dkms.conf)
 - 安装脚本：[install.sh](file:///e:/phytium-d2000-debian-migration/installer/install.sh)、[uninstall.sh](file:///e:/phytium-d2000-debian-migration/installer/uninstall.sh)
 - 开发与调试文档：[DEVELOPMENT.md](file:///e:/phytium-d2000-debian-migration/docs/DEVELOPMENT.md)
@@ -36,11 +36,11 @@ phytium-d2000-nic-offline/
 
 ## 二、快速使用（无网环境多机部署）
 
-1. 将 `phytium-d2000-nic-offline-v1.0.0-arm64.tar.gz` 拷贝到目标飞腾 D2000 Debian 13 主机。
+1. 将 `phytium-d2000-nic-offline-v1.0.1-arm64.tar.gz` 拷贝到目标飞腾 D2000 Debian 13 主机。
 2. 解压并执行安装脚本：
 
 ```bash
-tar -xzf phytium-d2000-nic-offline-v1.0.0-arm64.tar.gz
+tar -xzf phytium-d2000-nic-offline-v1.0.1-arm64.tar.gz
 cd phytium-d2000-nic-offline
 sudo ./install.sh
 ```
@@ -62,7 +62,7 @@ sudo ./install.sh
 
 1. **离线依赖检查与补齐**：检测 `dkms`、`gcc`、`make` 及 `/lib/modules/$(uname -r)/build` 是否存在，缺失时自动从 `debs/` 目录离线安装匹配当前内核版本的 `.deb` 依赖包。
 2. **驱动编译与安装（混合策略）**：
-   - **优先 DKMS**：当 `dkms`、编译工具与当前内核头文件就绪时，注册并编译安装 `dwmac-phytium/1.0.0` 到 DKMS；
+   - **优先 DKMS**：当 `dkms`、编译工具与当前内核头文件就绪时，注册并编译安装 `dwmac-phytium/1.0.1` 到 DKMS；
    - **次选本地直编**：若无 `dkms` 但具备内核头文件与编译工具，则原地 `make` 编译安装；
    - **兜底预编译回退**：若无编译环境但当前内核为 `6.12.107+deb13-arm64`，直接安装 `prebuilt/` 下对应版本的 `.ko.xz`。
 3. **持久化与加载**：执行 `depmod -a`，写入 `/etc/modules-load.d/dwmac-phytium.conf` 实现开机自动加载，并立即 `modprobe dwmac-phytium`。
@@ -91,3 +91,14 @@ sudo dmesg | grep -iE "phytium-dwmac|YT8521|enaphyt"
    只要已通过 DKMS 安装且系统装有 `linux-headers-arm64`，升级新内核时 DKMS 会自动为新内核重编 `dwmac-phytium.ko.xz`，重启后依然可用。
 2. **其他主机内核版本与 `6.12.107+deb13-arm64` 有小差异时能否安装？**  
    预编译 `.ko.xz` 仅适用于完全一致的 `uname -r`（`6.12.107+deb13-arm64`）。若其他主机为不同的 `6.12.x` 小版本，只需确保该主机已安装对应版本的 `linux-headers-<uname -r>`，运行 `sudo ./install.sh` 即可自动完成编译安装。
+3. **桌面环境下网口同时获取到两个 IPv4 地址怎么办？**  
+   在已启用 `NetworkManager` 的 Debian 13 桌面环境下，若同时使用 `install.sh` 自动写入的 `/etc/network/interfaces.d/<网口名>`（`ifupdown`），两套网络管理服务可能会各自发起一次 DHCP 请求，导致网口出现两个 IP。建议统一保留 `NetworkManager` 管理：
+   - **新机安装时**，使用 `--no-dhcp` 参数跳过写入 `ifupdown` 配置：
+     ```bash
+     sudo ./install.sh --no-dhcp
+     ```
+   - **已安装的主机**，删除自动生成的 `interfaces.d` 配置并重启即可：
+     ```bash
+     sudo rm -f /etc/network/interfaces.d/enaphyt4i0
+     sudo reboot
+     ```

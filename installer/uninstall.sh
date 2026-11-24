@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PKG_NAME="dwmac-phytium"
-PKG_VER="1.0.0"
+PKG_VER="1.0.1"
 KVER="$(uname -r)"
 
 if [ "$(id -u)" -ne 0 ]; then
