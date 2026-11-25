@@ -6,6 +6,9 @@ PKG_VER="1.0.1"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC_DIR="${SCRIPT_DIR}/src"
 DEBS_DIR="${SCRIPT_DIR}/debs"
+if [ ! -d "${DEBS_DIR}" ] && [ -d "${SCRIPT_DIR}/../debs" ]; then
+    DEBS_DIR="${SCRIPT_DIR}/../debs"
+fi
 PREBUILT_DIR="${SCRIPT_DIR}/prebuilt"
 KVER="$(uname -r)"
 CONFIGURE_DHCP=1
@@ -46,7 +49,13 @@ install_offline_debs() {
     for deb in "${DEBS_DIR}"/*.deb; do
         local base
         base="$(basename "$deb")"
-        if [[ "$base" == linux-headers-* ]] && [[ "$base" != *"-common_"* ]]; then
+        if [[ "$base" == linux-headers-arm64_* ]]; then
+            local kver_short="${KVER%%+*}"
+            if [[ "$base" != "linux-headers-arm64_${kver_short}"* ]]; then
+                echo "[INFO] 跳过不匹配当前内核(${KVER})的头文件元包: ${base}"
+                continue
+            fi
+        elif [[ "$base" == linux-headers-* ]] && [[ "$base" != *"-common_"* ]]; then
             if [[ "$base" != "linux-headers-${KVER}_"* ]]; then
                 echo "[INFO] 跳过不匹配当前内核(${KVER})的头文件包: ${base}"
                 continue

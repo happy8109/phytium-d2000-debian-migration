@@ -1,0 +1,19 @@
+# 离线打包产物（通过 GitHub Releases 分发，不纳入 Git 版本控制）
+dist/*.tar.gz
+dist/*.tar.gz.tmp
+
+# 内核模块编译产物
+*.o
+*.o.ur-safe
+*.ko
+*.ko.xz
+*.mod
+*.mod.c
+*.mod.o
+*.cmd
+*.order
+*.symvers
+.tmp_versions/
+.*.cmd
+*.i
+*.s
